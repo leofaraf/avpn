@@ -5,39 +5,31 @@ import { AiOutlinePoweroff, AiOutlineMenu } from "react-icons/ai";
 function App() {
   const [greetMsg, setGreetMsg] = useState("");
   const [name, setName] = useState("");
-  const [currentIp, setCurrentIp] = useState("")
+  const [ip, setIp] = useState(null)
   const [isWork, setWork] = useState(false)
+  const [isSetup, setSetup] = useState(false);
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    setGreetMsg(await invoke("greet", { name }));
-  }
-
-  async function updateCurrentIp() {
-    setCurrentIp(await invoke("current_ip"));
-  }
-
-  useEffect(() => {
+   useEffect(() => {
     const uci = async () => {
       function sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
       }
       while (true) {
-        await updateCurrentIp()
+        let ip = await invoke("ip")
+        ip = JSON.parse(ip.toLowerCase())
+        console.log(ip)
+        setIp(ip);
         await sleep(5000)
       }
     }
     uci()
   }, [])
 
-  const moduleIp = (ip) => {
-    const state = JSON.parse(ip.toLowerCase())
-    console.log(state)
-
+  const moduleIp = () => {
     return (
       <div className="flex gap-2 items-center">
-        <p>{state.country}</p>
-        <p>{state.query}</p>
+        <p>{ip.country}</p>
+        <p>{ip.query}</p>
       </div>
     )
   }
@@ -50,34 +42,54 @@ function App() {
 
   }
 
+  const setupProfile = () => {
+    setSetup(!isSetup)
+  }
+
   return (
-    <div className="flex flex-col justify-between items-center h-screen w-screen dark:bg-zinc-800 dark:text-white">
-      <div className="w-full flex p-5 justify-between">
-        <button>
-          <AiOutlineMenu className="w-5 h-5" />
-        </button>
-      </div>
-      <div className="flex flex-col gap-4 items-center">
-        <p className="text-xl">Not connected</p>
-        {isWork ? (
-          <button className="p-2 w-22 h-22 bg-gray-500 rounded-full"
-          onClick={() => setWork(false)}>
-            <AiOutlinePoweroff className="w-full h-full" color="white" />
-          </button>
+    <>
+      <div className="flex flex-col justify-between items-center h-screen w-screen dark:bg-[#222523] dark:text-white">
+        <div className="absolute top-0 h-8 w-full" data-tauri-drag-region></div>
+        <span></span>
+        {isSetup ? (
+          <div className="flex flex-col gap-5 items-center">
+            <fieldset className="space-y-3 w-56 rounded-lg p-3">
+                <legend className="pl-1">sshuttle settings</legend>
+                <input type="text" placeholder="user" />
+                <input type="text" placeholder="ip" />
+            </fieldset>
+            <div className="flex gap-2">
+              <button className="btn-simple">
+                Save
+              </button>
+              <button className="btn-simple" 
+              onClick={() => setSetup(false)}>
+                Exit
+              </button>
+            </div>
+          </div>
         ) : (
-          <button className="p-2 w-20 h-20 bg-blue-500 rounded-full"
-          onClick={() => setWork(true)}>
-            <AiOutlinePoweroff className="w-full h-full" color="white" />
-          </button>
+          <div className="flex flex-col gap-5 items-center">
+            <button className="btn-simple"
+            onClick={() => setSetup(true)}>
+              <p>Setup profile</p>
+            </button>
+            <img src="/avpn.png" alt="avpn logo" className={isWork ? "w-44" : "w-44 opacity-40"} />
+            <p className="text-xl">not connected</p>
+            <button className={`p-2 w-20 h-20 rounded-full ${isWork ? "bg-blue-500" : "bg-gray-500"}`}
+            onClick={() => setWork(!isWork)}>
+              <AiOutlinePoweroff className="w-full h-full" color="white" />
+            </button>
+          </div>
         )}
-      </div>
-      <div className="p-1 px-3 w-screen text-white bg-blue-500 flex justify-between items-center">
-        {currentIp && moduleIp(currentIp)}
-        <div className="flex items-center gap-2">
-          <a target="_blank" href="">github</a>
+        <div className="p-1 px-3 w-screen text-white bg-blue-500 flex justify-between items-center">
+          {ip && moduleIp()}
+          <div className="flex items-center gap-2">
+            <a target="_blank" href="">github</a>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
